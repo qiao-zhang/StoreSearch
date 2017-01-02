@@ -1,5 +1,5 @@
 //
-//  ViewController.swift
+//  SearchView.swift
 //  StoreSearch
 //
 //  Created by Qiao Zhang on 1/1/17.
@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class SearchView: UIViewController {
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -19,7 +19,6 @@ class ViewController: UIViewController {
     super.didReceiveMemoryWarning()
     // Dispose of any resources that can be recreated.
   }
-
 
 }
 
