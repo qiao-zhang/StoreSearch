@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		DD1EB0A9336DBC855923D481 /* SearchPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD1EB7CCE9E6A1CC5B107935 /* SearchPresenter.swift */; };
 		DD1EB76195BFC8B443152944 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD1EB2356DABA9A7CF8AAA70 /* SearchView.swift */; };
+		DD1EB8EDE23B879036EDB10A /* SearchResultCellItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD1EB5BCF4C450BF8F8CEC59 /* SearchResultCellItem.swift */; };
 		E7E575271E19F3CD00202B52 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7E575261E19F3CD00202B52 /* AppDelegate.swift */; };
 		E7E5752C1E19F3CD00202B52 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = E7E5752A1E19F3CD00202B52 /* Main.storyboard */; };
 		E7E5752E1E19F3CD00202B52 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E7E5752D1E19F3CD00202B52 /* Assets.xcassets */; };
@@ -17,6 +18,7 @@
 
 /* Begin PBXFileReference section */
 		DD1EB2356DABA9A7CF8AAA70 /* SearchView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
+		DD1EB5BCF4C450BF8F8CEC59 /* SearchResultCellItem.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchResultCellItem.swift; sourceTree = "<group>"; };
 		DD1EB7CCE9E6A1CC5B107935 /* SearchPresenter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchPresenter.swift; sourceTree = "<group>"; };
 		E7E575231E19F3CD00202B52 /* StoreSearch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StoreSearch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E7E575261E19F3CD00202B52 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -56,6 +58,7 @@
 		DD1EB95A975B01B1D63F3D97 /* ViewItem */ = {
 			isa = PBXGroup;
 			children = (
+				DD1EB5BCF4C450BF8F8CEC59 /* SearchResultCellItem.swift */,
 			);
 			path = ViewItem;
 			sourceTree = "<group>";
@@ -167,6 +170,7 @@
 				E7E575271E19F3CD00202B52 /* AppDelegate.swift in Sources */,
 				DD1EB76195BFC8B443152944 /* SearchView.swift in Sources */,
 				DD1EB0A9336DBC855923D481 /* SearchPresenter.swift in Sources */,
+				DD1EB8EDE23B879036EDB10A /* SearchResultCellItem.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -10,25 +10,22 @@ import UIKit
 
 protocol SearchViewOutput {
   func performSearch(for query: String,
-                     completion: @escaping ([String]) -> Void)
+                     completion: @escaping ([SearchResultCellItem]) -> Void)
 }
 
 class SearchView: UIViewController {
   
   fileprivate enum State {
-    case beforeAnySearching
-    case searching(String)
-    case showingResults([String])
+    case notSearchedYet
+    case searching
+    case results([SearchResultCellItem])
+    case noResults
   }
-  fileprivate var state: State = .beforeAnySearching {
+  fileprivate var state: State = .notSearchedYet {
     didSet {
       switch state {
-      case .showingResults:
+      case .results, .noResults:
         tableView.reloadData()
-      case .searching(let query):
-        output.performSearch(for: query) { results in
-          self.state = .showingResults(results)
-        }
       default:
         break
       }
@@ -45,7 +42,11 @@ extension SearchView: UISearchBarDelegate {
   func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
     if let query = searchBar.text, !query.isEmpty {
       searchBar.resignFirstResponder()
-      state = .searching(query)
+      state = .searching
+      output.performSearch(for: query) { results in
+        if results.isEmpty { self.state = .noResults }
+        else { self.state = .results(results) }
+      }
     }
   }
 
@@ -58,32 +59,57 @@ extension SearchView: UITableViewDataSource {
   func tableView(_ tableView: UITableView,
                  numberOfRowsInSection section: Int) -> Int {
     switch state {
-    case .showingResults(let results):
+    case .results(let results):
       return results.count
-    case .beforeAnySearching:
-      return 0
+    case .noResults:
+      return 1
     default:
-      fatalError("Table view should not reload in state: \(state)")
+      return 0
     }
   }
 
   func tableView(_ tableView: UITableView,
                  cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-    guard case .showingResults(let results) = state else {
-      fatalError("")
+    switch state {
+    case .results(let results):
+      var cell: UITableViewCell! =
+          tableView.dequeueReusableCell(withIdentifier: "SearchResultCell")
+      if cell == nil {
+        cell = UITableViewCell(style: .subtitle,
+                               reuseIdentifier: "SearchResultCell")
+      }
+      let cellItem = results[indexPath.row]
+      cell.textLabel!.text = cellItem.name
+      cell.detailTextLabel!.text = cellItem.artistName
+      return cell
+    case .noResults:
+      var cell: UITableViewCell! =
+          tableView.dequeueReusableCell(withIdentifier: "NoResultsCell")
+      if cell == nil {
+        cell = UITableViewCell(style: .default,
+                               reuseIdentifier: "NoResultsCell")
+      }
+      cell.textLabel!.text = "Nothing Found"
+      return cell
+    default:
+      fatalError("\(#function) should never be called in \(state)")
     }
-    var cell: UITableViewCell! =
-        tableView.dequeueReusableCell(withIdentifier: "SearchResultCell")
-    if cell == nil {
-      cell = UITableViewCell(style: .default,
-                             reuseIdentifier: "SearchResultCell")
-    }
-    cell.textLabel!.text = results[indexPath.row]
-    return cell
   }
-
 }
 
 extension SearchView: UITableViewDelegate {
-  
+  func tableView(_ tableView: UITableView,
+                 willSelectRowAt indexPath: IndexPath) -> IndexPath? {
+    switch state {
+    case .results:
+      return indexPath
+    default:
+      return nil
+    }
+  }
+
+  func tableView(_ tableView: UITableView,
+                 didSelectRowAt indexPath: IndexPath) {
+    tableView.deselectRow(at: indexPath, animated: true)
+  }
 }

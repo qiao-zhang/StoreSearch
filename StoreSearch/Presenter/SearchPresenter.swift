@@ -7,9 +7,10 @@ import Foundation
 
 class SearchPresenter: SearchViewOutput {
   func performSearch(`for` query: String,
-                     completion: @escaping ([String]) -> Void) {
+                     completion: @escaping ([SearchResultCellItem]) -> Void) {
     let results = ["1", "2", "3"].map {
-      "Fake result #\($0) for \(query)"
+      SearchResultCellItem(name: "Fake result \($0) for",
+                           artistName: query)
     }
     completion(results)
   }
