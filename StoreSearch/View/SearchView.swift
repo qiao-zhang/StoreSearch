@@ -32,10 +32,41 @@ class SearchView: UIViewController {
     }
   }
   
+  fileprivate enum Cell {
+    case searchResultCell
+    
+    var nibName: String {
+      switch self {
+      case .searchResultCell:
+        return "SearchResultCell"
+      }
+    }
+    
+    var identifier: String {
+      switch self {
+      case .searchResultCell:
+        return "SearchResultCell"
+      }
+    }
+    
+    static var allCells: [Cell] = [.searchResultCell]
+  }
+  
   @IBOutlet weak var searchBar: UISearchBar!
   @IBOutlet weak var tableView: UITableView!
-  
   var output: SearchViewOutput!
+  
+  // MARK: view lifecycle
+  override func viewDidLoad() {
+    super.viewDidLoad()
+    tableView.rowHeight = UITableViewAutomaticDimension
+    tableView.estimatedRowHeight = 80
+    let searchResultCellNib = UINib(nibName: Cell.searchResultCell.nibName,
+                                    bundle: nil)
+    tableView.register(searchResultCellNib,
+                       forCellReuseIdentifier: Cell.searchResultCell.identifier)
+  }
+
 }
 
 extension SearchView: UISearchBarDelegate {
@@ -72,15 +103,12 @@ extension SearchView: UITableViewDataSource {
                  cellForRowAt indexPath: IndexPath) -> UITableViewCell {
     switch state {
     case .results(let results):
-      var cell: UITableViewCell! =
-          tableView.dequeueReusableCell(withIdentifier: "SearchResultCell")
-      if cell == nil {
-        cell = UITableViewCell(style: .subtitle,
-                               reuseIdentifier: "SearchResultCell")
-      }
+      let cell =
+          tableView.dequeueReusableCell(
+              withIdentifier: Cell.searchResultCell.identifier,
+              for: indexPath) as! SearchResultCell
       let cellItem = results[indexPath.row]
-      cell.textLabel!.text = cellItem.name
-      cell.detailTextLabel!.text = cellItem.artistName
+      cell.config(with: cellItem)
       return cell
     case .noResults:
       var cell: UITableViewCell! =
