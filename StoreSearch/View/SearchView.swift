@@ -34,11 +34,14 @@ class SearchView: UIViewController {
   
   fileprivate enum Cell {
     case searchResultCell
+    case nothingFoundCell
     
-    var nibName: String {
+    var nibName: String? {
       switch self {
       case .searchResultCell:
         return "SearchResultCell"
+      default:
+        return nil
       }
     }
     
@@ -46,10 +49,12 @@ class SearchView: UIViewController {
       switch self {
       case .searchResultCell:
         return "SearchResultCell"
+      case .nothingFoundCell:
+        return "NothingFoundCell"
       }
     }
     
-    static var allCells: [Cell] = [.searchResultCell]
+    static var allCells: [Cell] = [.searchResultCell, .nothingFoundCell]
   }
   
   @IBOutlet weak var searchBar: UISearchBar!
@@ -61,7 +66,7 @@ class SearchView: UIViewController {
     super.viewDidLoad()
     tableView.rowHeight = UITableViewAutomaticDimension
     tableView.estimatedRowHeight = 80
-    let searchResultCellNib = UINib(nibName: Cell.searchResultCell.nibName,
+    let searchResultCellNib = UINib(nibName: Cell.searchResultCell.nibName!,
                                     bundle: nil)
     tableView.register(searchResultCellNib,
                        forCellReuseIdentifier: Cell.searchResultCell.identifier)
@@ -111,14 +116,9 @@ extension SearchView: UITableViewDataSource {
       cell.config(with: cellItem)
       return cell
     case .noResults:
-      var cell: UITableViewCell! =
-          tableView.dequeueReusableCell(withIdentifier: "NoResultsCell")
-      if cell == nil {
-        cell = UITableViewCell(style: .default,
-                               reuseIdentifier: "NoResultsCell")
-      }
-      cell.textLabel!.text = "Nothing Found"
-      return cell
+      return tableView.dequeueReusableCell(
+          withIdentifier: Cell.nothingFoundCell.identifier,
+          for: indexPath)
     default:
       fatalError("\(#function) should never be called in \(state)")
     }
