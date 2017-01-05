@@ -70,6 +70,7 @@ class SearchView: UIViewController {
                                     bundle: nil)
     tableView.register(searchResultCellNib,
                        forCellReuseIdentifier: Cell.searchResultCell.identifier)
+    searchBar.becomeFirstResponder()
   }
 
 }

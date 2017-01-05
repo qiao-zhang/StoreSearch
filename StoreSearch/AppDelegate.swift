@@ -13,11 +13,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
   var window: UIWindow?
   
-  func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
+  func application(_ application: UIApplication,
+                   didFinishLaunchingWithOptions launchOptions:
+                       [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
     // Override point for customization after application launch.
     let searchView = window!.rootViewController as! SearchView
     let presenter = SearchPresenter()
     searchView.output = presenter
+    
+    customizeAppearance()
+    
     return true
   }
 
@@ -43,6 +48,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
   }
 
+  func customizeAppearance() {
+    let barTintColor = UIColor(red: 20/255, green: 160/255,
+                               blue: 160/255, alpha: 1)
+    UISearchBar.appearance().barTintColor = barTintColor
+    window!.tintColor = UIColor(red: 10/255, green: 80/255,
+                                blue: 80/255, alpha: 1)
+  }
 
 }
 
