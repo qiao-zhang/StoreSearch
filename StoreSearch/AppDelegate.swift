@@ -18,7 +18,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                        [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
     // Override point for customization after application launch.
     let searchView = window!.rootViewController as! SearchView
-    let presenter = SearchPresenter()
+    let presenter = SearchPresenter(remoteAPI: iTunesAPI.shared)
     searchView.output = presenter
     
     customizeAppearance()

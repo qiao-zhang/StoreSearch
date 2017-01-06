@@ -5,18 +5,45 @@
 
 import Foundation
 
+protocol RemoteAPI {
+  func search(with query: String) -> [SearchResult]?
+}
+
 class SearchPresenter: SearchViewOutput {
-  func performSearch(`for` query: String,
+  
+  var remoteAPI: RemoteAPI
+  
+  init(remoteAPI: RemoteAPI) {
+    self.remoteAPI = remoteAPI
+  }
+  
+  func performSearch(with query: String,
                      completion: @escaping ([SearchResultCellItem]) -> Void) {
-    if query == "Bieber" {
-      completion([])
-      return
-    }
+    print("Search \(query)")
+    let results = remoteAPI.search(with: query) ?? []
     
-    let results = ["1", "2", "3"].map {
-      SearchResultCellItem(name: "Fake result \($0) for",
-                           artistName: query)
+    let items = results.map { (result: SearchResult) -> SearchResultCellItem in
+      let kind = kindForDisplay(result.kind)
+      let artistName = result.artistName.isEmpty ? "Unknown" : result.artistName
+      let title = String(format: "%@ (%@)", result.name, kind)
+      return SearchResultCellItem(title: title, artistName: artistName)
     }
-    completion(results)
+    completion(items)
+  }
+  
+  private func kindForDisplay(_ kind: String) -> String {
+    switch kind {
+    case "album": return "Album"
+    case "audiobook": return "Audio Book"
+    case "book": return "Book"
+    case "ebook": return "E-Book"
+    case "feature-movie": return "Movie"
+    case "music-video": return "Music Video"
+    case "podcast": return "Podcast"
+    case "software": return "App"
+    case "song": return "Song"
+    case "tv-episode": return "TV Episode"
+    default: return kind
+    }
   }
 }

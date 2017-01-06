@@ -9,7 +9,7 @@
 import UIKit
 
 protocol SearchViewOutput {
-  func performSearch(for query: String,
+  func performSearch(with query: String,
                      completion: @escaping ([SearchResultCellItem]) -> Void)
 }
 
@@ -21,16 +21,7 @@ class SearchView: UIViewController {
     case results([SearchResultCellItem])
     case noResults
   }
-  fileprivate var state: State = .notSearchedYet {
-    didSet {
-      switch state {
-      case .results, .noResults:
-        tableView.reloadData()
-      default:
-        break
-      }
-    }
-  }
+  fileprivate var state: State = .notSearchedYet
   
   fileprivate enum Cell {
     case searchResultCell
@@ -80,9 +71,10 @@ extension SearchView: UISearchBarDelegate {
     if let query = searchBar.text, !query.isEmpty {
       searchBar.resignFirstResponder()
       state = .searching
-      output.performSearch(for: query) { results in
-        if results.isEmpty { self.state = .noResults }
+      output.performSearch(with: query) { [unowned self] results in
+        if results.isEmpty {self.state = .noResults }
         else { self.state = .results(results) }
+        self.tableView.reloadData()
       }
     }
   }

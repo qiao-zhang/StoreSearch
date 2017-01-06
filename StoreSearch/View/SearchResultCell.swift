@@ -19,7 +19,7 @@ class SearchResultCell: UITableViewCell {
   }
 
   func config(with item: SearchResultCellItem) {
-    nameLabel.text = item.name
+    nameLabel.text = item.title
     artistNameLabel.text = item.artistName
   }
 }

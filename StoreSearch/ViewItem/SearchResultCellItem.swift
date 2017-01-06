@@ -6,6 +6,6 @@
 import Foundation
 
 struct SearchResultCellItem {
-  let name: String
+  let title: String
   let artistName: String
 }
