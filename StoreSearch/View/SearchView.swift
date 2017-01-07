@@ -9,8 +9,8 @@
 import UIKit
 
 protocol SearchViewOutput {
-  func performSearch(with query: String,
-                     completion: @escaping ([SearchResultCellItem]) -> Void)
+  func performSearchAsync(with query: String,
+                          completion: @escaping ([SearchResultCellItem]) -> Void)
 }
 
 class SearchView: UIViewController {
@@ -26,6 +26,7 @@ class SearchView: UIViewController {
   fileprivate enum Cell {
     case searchResultCell
     case nothingFoundCell
+    case searchingCell
     
     var nibName: String? {
       switch self {
@@ -42,10 +43,10 @@ class SearchView: UIViewController {
         return "SearchResultCell"
       case .nothingFoundCell:
         return "NothingFoundCell"
+      case .searchingCell:
+        return "SearchingCell"
       }
     }
-    
-    static var allCells: [Cell] = [.searchResultCell, .nothingFoundCell]
   }
   
   @IBOutlet weak var searchBar: UISearchBar!
@@ -71,10 +72,17 @@ extension SearchView: UISearchBarDelegate {
     if let query = searchBar.text, !query.isEmpty {
       searchBar.resignFirstResponder()
       state = .searching
-      output.performSearch(with: query) { [unowned self] results in
-        if results.isEmpty {self.state = .noResults }
-        else { self.state = .results(results) }
-        self.tableView.reloadData()
+      tableView.reloadData()
+
+      self.output.performSearchAsync(with: query) { [unowned self] results in
+        DispatchQueue.main.async {
+          if results.isEmpty {
+            self.state = .noResults
+          } else {
+            self.state = .results(results)
+          }
+          self.tableView.reloadData()
+        }
       }
     }
   }
@@ -90,7 +98,7 @@ extension SearchView: UITableViewDataSource {
     switch state {
     case .results(let results):
       return results.count
-    case .noResults:
+    case .noResults, .searching:
       return 1
     default:
       return 0
@@ -112,6 +120,10 @@ extension SearchView: UITableViewDataSource {
       return tableView.dequeueReusableCell(
           withIdentifier: Cell.nothingFoundCell.identifier,
           for: indexPath)
+    case .searching:
+      return tableView.dequeueReusableCell(
+          withIdentifier: Cell.searchingCell.identifier,
+          for: indexPath) 
     default:
       fatalError("\(#function) should never be called in \(state)")
     }

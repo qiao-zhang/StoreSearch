@@ -17,18 +17,25 @@ class SearchPresenter: SearchViewOutput {
     self.remoteAPI = remoteAPI
   }
   
-  func performSearch(with query: String,
+  func performSearchAsync(with query: String,
                      completion: @escaping ([SearchResultCellItem]) -> Void) {
     print("Search \(query)")
-    let results = remoteAPI.search(with: query) ?? []
     
-    let items = results.map { (result: SearchResult) -> SearchResultCellItem in
-      let kind = kindForDisplay(result.kind)
-      let artistName = result.artistName.isEmpty ? "Unknown" : result.artistName
-      let title = result.name + (kind.isEmpty ? "" : " (\(kind))")
-      return SearchResultCellItem(title: title, artistName: artistName)
+    let queue = DispatchQueue.global()
+    queue.async {
+      let results = self.remoteAPI.search(with: query) ?? []
+
+      let items =
+          results.map { (result: SearchResult) -> SearchResultCellItem in
+        let kind = self.kindForDisplay(result.kind)
+        let artistName =
+            result.artistName.isEmpty ? "Unknown" : result.artistName
+        let title = result.name + (kind.isEmpty ? "" : " (\(kind))")
+        return SearchResultCellItem(title: title, artistName: artistName)
+      }.sorted(by: <)
+
+      completion(items)
     }
-    completion(items)
   }
   
   private func kindForDisplay(_ kind: String) -> String {
