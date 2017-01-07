@@ -25,7 +25,7 @@ class SearchPresenter: SearchViewOutput {
     let items = results.map { (result: SearchResult) -> SearchResultCellItem in
       let kind = kindForDisplay(result.kind)
       let artistName = result.artistName.isEmpty ? "Unknown" : result.artistName
-      let title = String(format: "%@ (%@)", result.name, kind)
+      let title = result.name + (kind.isEmpty ? "" : " (\(kind))")
       return SearchResultCellItem(title: title, artistName: artistName)
     }
     completion(items)
