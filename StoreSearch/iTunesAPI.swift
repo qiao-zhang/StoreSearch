@@ -12,19 +12,34 @@ class iTunesAPI: SearchResultStore {
   
   private var currentSearchDataTask: URLSessionDataTask?
   
-  func iTunesURL(query: String) -> URL {
+  func iTunesURL(query: String, category: SearchResultCategory) -> URL {
+    
+    let entityString: String
+    switch category {
+    case .music:
+      entityString = "musicTrack"
+    case .software:
+      entityString = "software"
+    case .ebooks:
+      entityString = "ebook"
+    default:
+      entityString = ""
+    }
+    
     let escapedQuery =
         query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
-    let urlString = String(format: "https://itunes.apple.com/search?term=%@",
-                           escapedQuery!)
+    let urlString = String(
+        format: "https://itunes.apple.com/search?term=%@&limit=200&entity=%@", 
+        escapedQuery!, entityString)
     let url = URL(string: urlString)
     return url!
   }
   
   func search(with query: String,
+              category: SearchResultCategory,
               completion: @escaping ([SearchResult]?) -> Void) {
     
-    let url = iTunesURL(query: query)
+    let url = iTunesURL(query: query, category: category)
     
     currentSearchDataTask = URLSession.shared.dataTask(with: url) {
       data, response, error in

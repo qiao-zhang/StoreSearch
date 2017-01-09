@@ -9,6 +9,7 @@ class SearchResultCell: UITableViewCell {
   @IBOutlet weak var nameLabel: UILabel!
   @IBOutlet weak var artistNameLabel: UILabel!
   @IBOutlet weak var artworkImageView: UIImageView!
+  @IBOutlet weak var categoryLabel: UILabel!
 
   override func awakeFromNib() {
     super.awakeFromNib()
@@ -19,7 +20,8 @@ class SearchResultCell: UITableViewCell {
   }
 
   func config(with item: SearchResultCellItem) {
-    nameLabel.text = item.title
+    nameLabel.text = item.name
+    categoryLabel.text = item.category
     artistNameLabel.text = item.artistName
   }
 }

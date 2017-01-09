@@ -11,30 +11,35 @@ import UIKit
 protocol SearchViewOutput {
   func performSearchAsync(
       with query: String,
+      categoryString: String,
       completion: @escaping ([SearchResultCellItem]?) -> Void)
 }
 
 class SearchView: UIViewController {
   
-  fileprivate enum State {
+  enum State {
     case initializing
     case beforeSearching
     case searching
     case results([SearchResultCellItem])
     case noResults
   }
-  fileprivate var state: State = .initializing {
+  
+  var state: State = .initializing {
     didSet {
       switch state {
-      case .beforeSearching, .searching, .results, .noResults:
+      case .beforeSearching, .searching, .noResults:
         tableView.reloadData()
+      case .results:
+        tableView.reloadData()
+        segmentedControl.isHidden = false
       default:
         break
       }
     }
   }
   
-  fileprivate enum Cell {
+  enum Cell {
     case searchResultCell
     case nothingFoundCell
     case searchingCell
@@ -60,9 +65,18 @@ class SearchView: UIViewController {
     }
   }
   
+  var output: SearchViewOutput!
+  
   @IBOutlet weak var searchBar: UISearchBar!
   @IBOutlet weak var tableView: UITableView!
-  var output: SearchViewOutput!
+  @IBOutlet weak var segmentedControl: UISegmentedControl!
+  
+  @IBAction func segmentChanged(_ sender: UISegmentedControl) {
+    if let query = searchBar.text, !query.isEmpty {
+      performSearch(with: query,
+                    categoryIndex: segmentedControl.selectedSegmentIndex)
+    }
+  }
   
   // MARK: view lifecycle
   override func viewDidLoad() {
@@ -74,6 +88,32 @@ class SearchView: UIViewController {
     tableView.register(searchResultCellNib,
                        forCellReuseIdentifier: Cell.searchResultCell.identifier)
     state = .beforeSearching
+  }
+  
+  func performSearch(with query: String, categoryIndex: Int) {
+    
+    guard let categoryString = segmentedControl.titleForSegment(
+        at: categoryIndex) else {
+      return
+    }
+    
+    state = .searching
+    
+    self.output.performSearchAsync(with: query,
+                                   categoryString: categoryString) {
+      [unowned self] results in
+      
+      DispatchQueue.main.async {
+        guard let results = results else {
+          return self.alertNetworkError()
+        }
+        if results.isEmpty {
+          self.state = .noResults
+        } else {
+          self.state = .results(results)
+        }
+      }
+    }
   }
 
   func alertNetworkError() {
@@ -92,24 +132,10 @@ class SearchView: UIViewController {
 
 extension SearchView: UISearchBarDelegate {
   func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-    if let query = searchBar.text, !query.isEmpty {
-      searchBar.resignFirstResponder()
-      state = .searching
-
-      self.output.performSearchAsync(with: query) { [unowned self] results in
-        DispatchQueue.main.async {
-          guard let results = results else {
-            self.alertNetworkError()
-            return
-          }
-          if results.isEmpty {
-            self.state = .noResults
-          } else {
-            self.state = .results(results)
-          }
-        }
-      }
-    }
+    guard let query = searchBar.text, !query.isEmpty else { return }
+    searchBar.resignFirstResponder()
+    performSearch(with: query,
+                  categoryIndex: segmentedControl.selectedSegmentIndex)
   }
 
   func position(`for` bar: UIBarPositioning) -> UIBarPosition {
@@ -146,9 +172,11 @@ extension SearchView: UITableViewDataSource {
           withIdentifier: Cell.nothingFoundCell.identifier,
           for: indexPath)
     case .searching:
-      return tableView.dequeueReusableCell(
+      let cell = tableView.dequeueReusableCell(
           withIdentifier: Cell.searchingCell.identifier,
           for: indexPath) 
+      (cell.viewWithTag(1) as? UIActivityIndicatorView)?.startAnimating()
+      return cell
     default:
       fatalError("\(#function) should never be called in \(state)")
     }

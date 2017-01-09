@@ -6,10 +6,11 @@
 import UIKit
 
 struct SearchResultCellItem {
-  let title: String
+  let name: String
+  let category: String
   let artistName: String
 }
 
 func < (lhs: SearchResultCellItem, rhs: SearchResultCellItem) -> Bool {
-  return lhs.title.localizedStandardCompare(rhs.title) == .orderedAscending
+  return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
 }

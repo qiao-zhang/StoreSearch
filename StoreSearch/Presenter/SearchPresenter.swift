@@ -7,8 +7,16 @@ import Foundation
 
 protocol SearchResultStore {
   func search(with query: String,
+              category: SearchResultCategory,
               completion: @escaping ([SearchResult]?) -> Void)
   func cancelCurrentSearch()
+}
+
+enum SearchResultCategory {
+  case music
+  case software
+  case ebooks
+  case unspecified
 }
 
 class SearchPresenter: SearchViewOutput {
@@ -21,11 +29,24 @@ class SearchPresenter: SearchViewOutput {
   
   func performSearchAsync(
       with query: String,
+      categoryString: String,
       completion: @escaping ([SearchResultCellItem]?) -> Void) {
     
     cancelCurrentSearch()
     
-    searchResultStore.search(with: query) {
+    let category: SearchResultCategory
+    switch categoryString {
+    case "Music":
+      category = .music
+    case "Software":
+      category = .software
+    case "E-books":
+      category = .ebooks
+    default:
+      category = .unspecified
+    }
+    
+    searchResultStore.search(with: query, category: category) {
       [unowned self] results in
       
       guard let results = results else {
@@ -38,8 +59,10 @@ class SearchPresenter: SearchViewOutput {
           let kind = self.kindForDisplay(result.kind)
           let artistName =
             result.artistName.isEmpty ? "Unknown" : result.artistName
-          let title = result.name + (kind.isEmpty ? "" : " (\(kind))")
-          return SearchResultCellItem(title: title, artistName: artistName)
+          let name = result.name
+          return SearchResultCellItem(name: name,
+                                      category: kind,
+                                      artistName: artistName)
         }.sorted(by: <)
       
       completion(items)
