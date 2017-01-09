@@ -5,10 +5,12 @@
 
 import Foundation
 
-class iTunesAPI {
+class iTunesAPI: SearchResultStore {
   
   static let shared = iTunesAPI()
   private init() {}
+  
+  private var currentSearchDataTask: URLSessionDataTask?
   
   func iTunesURL(query: String) -> URL {
     let escapedQuery =
@@ -18,24 +20,39 @@ class iTunesAPI {
     let url = URL(string: urlString)
     return url!
   }
-}
-
-extension iTunesAPI: RemoteAPI {
-  func search(with query: String) -> [SearchResult]? {
-    do {
-      let url = iTunesURL(query: query)
-      let jsonString = try String(contentsOf: url, encoding: .utf8)
-      return parse(json: jsonString)
-    } catch {
-      print("Download Error: \(error)")
-      return nil
-    }
-  }
   
-  private func parse(json: String) -> [SearchResult]? {
-    guard let data = json.data(using: .utf8, allowLossyConversion: false) else {
-      return nil
+  func search(with query: String,
+              completion: @escaping ([SearchResult]?) -> Void) {
+    
+    let url = iTunesURL(query: query)
+    
+    currentSearchDataTask = URLSession.shared.dataTask(with: url) {
+      data, response, error in
+      
+      if let error = error as? NSError, error.code == -999 {
+        return // Search was cancelled
+      }
+      
+      if error != nil {
+        return completion(nil)
+      }
+      
+      if let httpResponse = response as? HTTPURLResponse,
+                httpResponse.statusCode == 200 {
+        return completion(self.parse(json: data!))
+      }
+      
+      return completion(nil)
     }
+    currentSearchDataTask?.resume()
+  }
+
+  func cancelCurrentSearch() {
+    currentSearchDataTask?.cancel()
+  }
+
+
+  private func parse(json data: Data) -> [SearchResult]? {
     do {
       guard let jsonDict = try JSONSerialization.jsonObject(
           with: data, options: []) as? [String: Any] else {
@@ -48,48 +65,46 @@ extension iTunesAPI: RemoteAPI {
     }
   }
   
-  private func parse(dictionary: [String: Any]) -> [SearchResult] {
+  private func parse(dictionary: [String: Any]) -> [SearchResult]? {
     guard let array = dictionary["results"] as? [Any] else {
       print("Expected 'results' array")
-      return []
+      return nil
     }
     
     var searchResults: [SearchResult] = []
-    for resultDict in array {
-      if let resultDict = resultDict as? [String: Any] {
-        var searchResult: SearchResult!
-        if let wrapperType = resultDict["wrapperType"] as? String {
-          switch wrapperType {
-          case "track":
-            searchResult = parse(track: resultDict)
-          case "audiobook":
-            searchResult = parse(audiobook: resultDict)
-          case "software":
-            searchResult = parse(software: resultDict)
-          default:
-            break
+    array.flatMap { $0 as? [String: Any] }.forEach { resultDict in
+          var searchResult: SearchResult?
+          if let wrapperType = resultDict["wrapperType"] as? String {
+            switch wrapperType {
+            case "track":
+              searchResult = parse(track: resultDict)
+            case "audiobook":
+              searchResult = parse(audiobook: resultDict)
+            case "software":
+              searchResult = parse(software: resultDict)
+            default:
+              break
+            }
+          } else if let kind = resultDict["kind"] as? String, kind == "ebook" {
+            searchResult = parse(ebook: resultDict)
           }
-        } else if let kind = resultDict["kind"] as? String, kind == "ebook" {
-          searchResult = parse(ebook: resultDict)
+          
+          if let result = searchResult {
+            searchResults.append(result)
+          }
         }
-        
-        if let result = searchResult {
-          searchResults.append(result)
-        }
-      }
-    }
     
     return searchResults
   }
   
-  private func parse(track dict: [String: Any]) -> SearchResult {
-    let name = dict["trackName"] as! String
-    let artistName = dict["artistName"] as! String
-    let artworkSmallURL = dict["artworkUrl60"] as! String
-    let artworkLargeURL = dict["artworkUrl100"] as! String
-    let storeURL = dict["trackViewUrl"] as! String
-    let kind = dict["kind"] as! String
-    let currency = dict["currency"] as! String
+  private func parse(track dict: [String: Any]) -> SearchResult? {
+    guard let name = dict["trackName"] as? String else { return nil }
+    let artistName = dict["artistName"] as? String ?? ""
+    let artworkSmallURL = dict["artworkUrl60"] as? String ?? ""
+    let artworkLargeURL = dict["artworkUrl100"] as? String ?? ""
+    let storeURL = dict["trackViewUrl"] as? String ?? ""
+    let kind = dict["kind"] as? String ?? ""
+    let currency = dict["currency"] as? String ?? ""
     let price = dict["trackPrice"] as? Double ?? 0.0
     let genre = dict["primaryGenreName"] as? String ?? ""
     return SearchResult(name: name, artistName: artistName,
@@ -99,8 +114,8 @@ extension iTunesAPI: RemoteAPI {
                         currency: currency, price: price, genre: genre)
   }
   
-  private func parse(audiobook dict: [String: Any]) -> SearchResult {
-    let name = dict["collectionName"] as? String ?? ""
+  private func parse(audiobook dict: [String: Any]) -> SearchResult? {
+    guard let name = dict["collectionName"] as? String else { return nil }
     let artistName = dict["artistName"] as? String ?? ""
     let artworkSmallURL = dict["artworkUrl60"] as? String ?? ""
     let artworkLargeURL = dict["artworkUrl100"] as? String ?? ""
@@ -116,8 +131,8 @@ extension iTunesAPI: RemoteAPI {
                         currency: currency, price: price, genre: genre)
   }
   
-  private func parse(software dict: [String: Any]) -> SearchResult {
-    let name = dict["trackName"] as? String ?? ""
+  private func parse(software dict: [String: Any]) -> SearchResult? {
+    guard let name = dict["trackName"] as? String else { return nil }
     let artistName = dict["artistName"] as? String ?? ""
     let artworkSmallURL = dict["artworkUrl60"] as? String ?? ""
     let artworkLargeURL = dict["artworkUrl100"] as? String ?? ""
@@ -133,8 +148,8 @@ extension iTunesAPI: RemoteAPI {
                         currency: currency, price: price, genre: genre)
   }
   
-  private func parse(ebook dict: [String: Any]) -> SearchResult {
-    let name = dict["trackName"] as? String ?? ""
+  private func parse(ebook dict: [String: Any]) -> SearchResult? {
+    guard let name = dict["trackName"] as? String else { return nil }
     let artistName = dict["artistName"] as? String ?? ""
     let artworkSmallURL = dict["artworkUrl60"] as? String ?? ""
     let artworkLargeURL = dict["artworkUrl100"] as? String ?? ""

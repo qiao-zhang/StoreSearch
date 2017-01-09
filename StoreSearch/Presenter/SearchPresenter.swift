@@ -5,37 +5,49 @@
 
 import Foundation
 
-protocol RemoteAPI {
-  func search(with query: String) -> [SearchResult]?
+protocol SearchResultStore {
+  func search(with query: String,
+              completion: @escaping ([SearchResult]?) -> Void)
+  func cancelCurrentSearch()
 }
 
 class SearchPresenter: SearchViewOutput {
   
-  var remoteAPI: RemoteAPI
+  private var searchResultStore: SearchResultStore
   
-  init(remoteAPI: RemoteAPI) {
-    self.remoteAPI = remoteAPI
+  init(searchResultStore: SearchResultStore) {
+    self.searchResultStore = searchResultStore
   }
   
-  func performSearchAsync(with query: String,
-                     completion: @escaping ([SearchResultCellItem]) -> Void) {
-    print("Search \(query)")
+  func performSearchAsync(
+      with query: String,
+      completion: @escaping ([SearchResultCellItem]?) -> Void) {
     
-    let queue = DispatchQueue.global()
-    queue.async {
-      let results = self.remoteAPI.search(with: query) ?? []
-
+    cancelCurrentSearch()
+    
+    searchResultStore.search(with: query) {
+      [unowned self] results in
+      
+      guard let results = results else {
+        completion(nil)
+        return
+      }
+      
       let items =
-          results.map { (result: SearchResult) -> SearchResultCellItem in
-        let kind = self.kindForDisplay(result.kind)
-        let artistName =
+        results.map { (result: SearchResult) -> SearchResultCellItem in
+          let kind = self.kindForDisplay(result.kind)
+          let artistName =
             result.artistName.isEmpty ? "Unknown" : result.artistName
-        let title = result.name + (kind.isEmpty ? "" : " (\(kind))")
-        return SearchResultCellItem(title: title, artistName: artistName)
-      }.sorted(by: <)
-
+          let title = result.name + (kind.isEmpty ? "" : " (\(kind))")
+          return SearchResultCellItem(title: title, artistName: artistName)
+        }.sorted(by: <)
+      
       completion(items)
     }
+  }
+  
+  func cancelCurrentSearch() {
+    searchResultStore.cancelCurrentSearch()
   }
   
   private func kindForDisplay(_ kind: String) -> String {

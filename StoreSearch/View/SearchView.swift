@@ -9,19 +9,30 @@
 import UIKit
 
 protocol SearchViewOutput {
-  func performSearchAsync(with query: String,
-                          completion: @escaping ([SearchResultCellItem]) -> Void)
+  func performSearchAsync(
+      with query: String,
+      completion: @escaping ([SearchResultCellItem]?) -> Void)
 }
 
 class SearchView: UIViewController {
   
   fileprivate enum State {
-    case notSearchedYet
+    case initializing
+    case beforeSearching
     case searching
     case results([SearchResultCellItem])
     case noResults
   }
-  fileprivate var state: State = .notSearchedYet
+  fileprivate var state: State = .initializing {
+    didSet {
+      switch state {
+      case .beforeSearching, .searching, .results, .noResults:
+        tableView.reloadData()
+      default:
+        break
+      }
+    }
+  }
   
   fileprivate enum Cell {
     case searchResultCell
@@ -62,9 +73,21 @@ class SearchView: UIViewController {
                                     bundle: nil)
     tableView.register(searchResultCellNib,
                        forCellReuseIdentifier: Cell.searchResultCell.identifier)
-    searchBar.becomeFirstResponder()
+    state = .beforeSearching
   }
 
+  func alertNetworkError() {
+    let alert = UIAlertController(
+        title: "Whoops...",
+        message: "There was an error reading from the iTunes Store." +
+            " Please try again.",
+        preferredStyle: .alert)
+    let action = UIAlertAction(title: "OK", style: .default) { _ in
+      self.state = .beforeSearching
+    }
+    alert.addAction(action)
+    present(alert, animated: true, completion: nil)
+  }
 }
 
 extension SearchView: UISearchBarDelegate {
@@ -72,16 +95,18 @@ extension SearchView: UISearchBarDelegate {
     if let query = searchBar.text, !query.isEmpty {
       searchBar.resignFirstResponder()
       state = .searching
-      tableView.reloadData()
 
       self.output.performSearchAsync(with: query) { [unowned self] results in
         DispatchQueue.main.async {
+          guard let results = results else {
+            self.alertNetworkError()
+            return
+          }
           if results.isEmpty {
             self.state = .noResults
           } else {
             self.state = .results(results)
           }
-          self.tableView.reloadData()
         }
       }
     }
